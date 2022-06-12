@@ -1,25 +1,54 @@
 // SPDX-License-Identifier: UNLICENSED
-
-// Solidity コンパイラのバージョン
 pragma solidity ^0.8.4;
-// ログ出力のためのインポート
-import "hardhat/console.sol";
-// cntractはclassに相当するもの。初期化時にWavePortalコントラクトの状態を初期化
+import "../hardhat/console.sol";
 contract WavePortal {
     uint256 totalWaves;
-    // constructorは、コントラクトがデプロイされるときに初めて実行される。
-    // constructorが実行されたのちにコードがブロックチェーンにデプロイ
+    /*
+    * NewWaveイベントの作成
+    */
+    event NewWave(address indexed from, uint256 timestamp, string message);
+    /*
+    * Waveという構造体を作成。
+    * 構造体の中身は、カスタマイズすることができます。
+    */
+    struct Wave {
+        address waver; //「👋（wave）」を送ったユーザーのアドレス
+        string message; // ユーザーが送ったメッセージ
+        uint256 timestamp; // ユーザーが「👋（wave）」を送った瞬間のタイムスタンプ
+    }
+    /*
+    * 構造体の配列を格納するための変数wavesを宣言。
+    * これで、ユーザーが送ってきたすべての「👋（wave）」を保持することができます。
+    */
+    Wave[] waves;
     constructor() {
-        console.log("Here is my first smart contract!");
+        console.log("WavePortal - Smart Contract!");
     }
-
-    function wave() public {
-        totalWaves++;
-        console.log("%s has waved!", msg.sender);
+    /*
+    * _messageという文字列を要求するようにwave関数を更新。
+    * _messageは、ユーザーがフロントエンドから送信するメッセージです。
+    */
+    function wave(string memory _message) public {
+        totalWaves += 1;
+        console.log("%s waved w/ message %s", msg.sender, _message);
+        /*
+         * 「👋（wave）」とメッセージを配列に格納。
+         */
+        waves.push(Wave(msg.sender, _message, block.timestamp));
+        /*
+         * コントラクト側でemitされたイベントに関する通知をフロントエンドで取得できるようにする。
+         */
+        emit NewWave(msg.sender, block.timestamp, _message);
     }
-    // view関係修飾子を付けることによって状態変数の読み取りのみ可能に
-    // 読み取りだけなのでガス代は発生しない
+    /*
+     * 構造体配列のwavesを返してくれるgetAllWavesという関数を追加。
+     * これで、私たちのWEBアプリからwavesを取得することができます。
+     */
+    function getAllWaves() public view returns (Wave[] memory) {
+        return waves;
+    }
     function getTotalWaves() public view returns (uint256) {
+        // コントラクトが出力する値をコンソールログで表示する。
         console.log("We have %d total waves!", totalWaves);
         return totalWaves;
     }
